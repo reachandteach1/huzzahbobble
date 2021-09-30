@@ -20,6 +20,8 @@
   60 to 119 will set PINOUT2 HIGH and PINOUT3 HIGH
   120 to 180 will set PINOUT2 HIGH and PINOUT3 LOW
 
+  If pin ZAPSERVO is grounded, zap will also drive the SERVOPIN to 90 for 750ms and then to 0
+
   For controlling an external motor using a L293d motor driver chip:
   connect PINOUT2 and PINOUT3 to the motor direction pins of the chip
   connect PINOUT4 to the motor enable pin of the chip
@@ -30,6 +32,7 @@
   #define PINOUT3 14 
   #define PINOUT4 16 
   #define SERVOPIN 13
+  #define ZAPSERVO 4
   
    
  ****************************************************/
@@ -48,6 +51,7 @@
 #define PINOUT3 14 // motor direction (active low) reverse/advance
 #define PINOUT4 16 // motor enable (ON/OFF)
 #define SERVOPIN 13
+#define ZAPSERVO 5 // ground this pin to drive servo with zap command
 #define CTRLC 3
 
 
@@ -129,6 +133,7 @@ void setup() {
   analogWrite(APINOUT, 0); // output 0V to APINOUT
   digitalWrite(PINOUT3, LOW);
   digitalWrite(PINOUT2, HIGH);
+  pinMode(ZAPSERVO, INPUT_PULLUP);
   Serial.begin(115200);
   delay(10);
 
@@ -260,6 +265,7 @@ void setup() {
   digitalWrite(0, LOW); // turn on Red LED to indicate we are connected WiFi
   Servo1.attach(servoPin); // Attach servo
   ServoOn=true;
+  Servo1.write(0);
 
 }
 
@@ -294,11 +300,14 @@ void loop() {
       }
       if (line.substring(0, 3) == "zap") { // pulse on/off
         Serial.println("\n\r PINOUT4 (motor enable) pulse ON/OFF");
+        int zapServoVal= digitalRead(ZAPSERVO); // if ZAPSERVO pin grounded, also drive servo
         digitalWrite(0, LOW);  // red led on
         digitalWrite(PINOUT4, HIGH);
+        if (zapServoVal == LOW) { Servo1.write(90); }
         delay(750);
         digitalWrite(0, HIGH);  // red led off
         digitalWrite(PINOUT4, LOW);
+        if (zapServoVal == LOW) { Servo1.write(0); servoValue= 0; }
 
       }
       
